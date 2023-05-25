@@ -1,0 +1,153 @@
+---
+title: "HW for Class 6"
+author: "Juliane Kwong"
+format: pdf
+---
+Prior to rendering Quarto document, a CRAN mirror error popped up. To troubleshoot, set a CRAN mirror before installing packages to R base.
+```{r}
+options(repos = c(CRAN = "http://cran.rstudio.com"))
+```
+
+Install bio3d package.
+```{r}
+install.packages("bio3d")
+```
+
+Pasted code from the online document.
+```{r}
+# Can you improve this analysis code?
+library(bio3d)
+s1 <- read.pdb("4AKE")  # kinase with drug
+s2 <- read.pdb("1AKE")  # kinase no drug
+s3 <- read.pdb("1E4Y")  # kinase with drug
+s1.chainA <- trim.pdb(s1, chain="A", elety="CA")
+s2.chainA <- trim.pdb(s2, chain="A", elety="CA")
+s3.chainA <- trim.pdb(s3, chain="A", elety="CA")
+s1.b <- s1.chainA$atom$b
+s2.b <- s2.chainA$atom$b
+s3.b <- s3.chainA$atom$b
+plotb3(s1.b, sse=s1.chainA, typ="l", ylab="Bfactor")
+plotb3(s2.b, sse=s2.chainA, typ="l", ylab="Bfactor")
+plotb3(s3.b, sse=s3.chainA, typ="l", ylab="Bfactor")
+```
+
+Load the bio3d, and ggplot2 packages by using the `library` function.
+```{r}
+library(bio3d)
+library(ggplot2)
+```
+
+Run the codes above, except for the `plotb3` functions.
+```{r}
+s1 <- read.pdb("4AKE")  # kinase with drug
+s2 <- read.pdb("1AKE")  # kinase no drug
+s3 <- read.pdb("1E4Y")  # kinase with drug
+s1.chainA <- trim.pdb(s1, chain="A", elety="CA")
+s2.chainA <- trim.pdb(s2, chain="A", elety="CA")
+s3.chainA <- trim.pdb(s3, chain="A", elety="CA")
+s1.b <- s1.chainA$atom$b
+s2.b <- s2.chainA$atom$b
+s3.b <- s3.chainA$atom$b
+```
+
+Combine the s1,s2,s3 PDB files into one vector 'pdb_files'. Then use `read.pdb` to read the PDB files and `lapply` function to store it in a list.
+```{r}
+pdb_files <- c("4AKE", "1AKE", "1E4Y")
+pdb <- lapply(pdb_files, read.pdb)
+pdb
+```
+
+Use the `lapply` function again to trim the PDB files, and only extract the b-factors.
+```{r}
+pdb_trim <- lapply(pdb, function(x) trim.pdb(x, chain="A", elety="CA"))
+b_factors <- lapply(pdb_trim, function(x) x$atom$b)
+pdb_trim
+b_factors
+```
+
+Use the `data.frame` function to create a date frame for each structure. Where `seq_along` is a function that creates an integer sequence corresponding to the vector length.
+```{r}
+df1 <- data.frame(x = seq_along(s1.b), y = s1.b, structure = "s1")
+df2 <- data.frame(x = seq_along(s2.b), y = s2.b, structure = "s2")
+df3 <- data.frame(x = seq_along(s3.b), y = s3.b, structure = "s3")
+```
+
+Combine the data frames into one `data.frame` function.
+```{r}
+df <- rbind(df1, df2, df3)
+```
+
+Use `ggplot2` to create a single plot containing all protein structures
+```{r}
+ggplot(df, aes(x = x, y = y, color = structure)) +
+  geom_line() +
+  labs(x = "Residue", y = "Bfactor")
+```
+
+Define a function to work for the protein structures provided by copy and pasting all of the above codes.
+```{r}
+b3_plots <- function(pdb) { 
+  
+  # Read PDB files
+  pdb_files <- c("4AKE", "1AKE", "1E4Y")
+  pdb <- lapply(pdb_files, read.pdb)
+  
+  # Trim PDB files and extract b factors
+  pdb_trim <- lapply(pdb, function(x) trim.pdb(x, chain="A", elety="CA"))    
+  b_factors <- lapply(pdb_trim, function(x) x$atom$b)
+  
+  # Create a 'data.frame' for each structure
+  df1 <- data.frame(x = seq_along(s1.b), y = s1.b, structure = "s1")
+  df2 <- data.frame(x = seq_along(s2.b), y = s2.b, structure = "s2")
+  df3 <- data.frame(x = seq_along(s3.b), y = s3.b, structure = "s3")
+  
+  # Combine the data frames
+  df <- rbind(df1, df2, df3)
+
+  # Use 'ggplot2' to plot all structures on one plot.
+  ggplot(df, aes(x = x, y = y, color = structure)) +
+  geom_line() +
+  labs(x = "Residue", y = "Bfactor")
+  }
+```
+
+Use the defined `b3_plots` function to plot the protein structures provided in the original code.
+```{r}
+b3_plots(c("4AKE", "1AKE", "1E4Y"))
+```
+
+Generalize the above code to work with any protein.
+```{r}
+any_plots <- function(pdb_id) { 
+  
+  # Read PDB file
+  pdb <- read.pdb(pdb_id)
+  
+  # Trim PDB file and extract b factors
+  pdb_trim <- trim.pdb(pdb, chain="A", elety="CA")    
+  b_factors <- pdb_trim$atom$b
+  
+  # Create a 'data.frame' for the structure
+  df <- data.frame(x = seq_along(b_factors), 
+                   y = b_factors, 
+                   structure = pdb_id)
+  
+  # Use ggplot2 to plot the protein structure
+  ggplot(df, aes(x = x, y = y, color = structure)) +
+  geom_line() +
+  labs(x = "Residue", y = "Bfactor")
+}
+```
+
+Now the function `any_plots` can be used to plot any protein structure.
+```{r}
+any_plots("4AKE")
+any_plots("1AKE")
+any_plots("1E4Y")
+```
+
+
+
+
+
+

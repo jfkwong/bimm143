@@ -1,0 +1,172 @@
+---
+title: "Lab 8"
+author: "Juliane Kwong"
+format: pdf
+---
+
+# Breast Cancer Project
+Today we are going to explore some data from the University of Wisconsin Cancer Center on Breast biopsy data.
+
+```{r}
+#| echo: false
+wisc.data <- read.csv("WisconsinCancer.csv", row.names=1)
+head(wisc.data)
+```
+
+> Q. How many patient samples are in this dataset.
+
+```{r}
+nrow(wisc.data)
+```
+Use `r ` to include any data from the function when the file is rendered.
+There are `r nrow(wisc.data)` patients in this dataset. 
+
+> Q. How many cancer (M) and non cancer (B) samples are there?
+
+```{r}
+table(wisc.data$diagnosis)
+```
+
+```{r}
+diagnosis <- as.factor(wisc.data$diagnosis)
+#diagnosis
+```
+
+Now exclude the diagnosis column from the data
+```{r}
+head(wisc.data[,-1])
+wisc <-wisc.data[,-1]
+```
+
+> Q. How many "dimensions", "variables", "columns", are there in this dataset?
+
+```{r}
+ncol(wisc)
+```
+
+# Principal Component Analysis (PCA)
+
+To perform PCA in R we can use the `prcomp()` function. It takes as input a numeric dataset and optional `scale=FALSE/TRUE` argument.
+
+We generally always want to set `scale=TRUE` but let's make sure by checking if the mean and standard deviation values are different across these 30 columns.
+
+```{r}
+round( colMeans(wisc))
+```
+
+```{r}
+pca <- prcomp(wisc, scale=TRUE)
+summary(pca)
+```
+
+```{r}
+attributes(pca)
+```
+
+```{r}
+plot(pca$x[,1], pca$x[,2], col=diagnosis)
+```
+
+```{r}
+library(ggplot2)
+
+x<-as.data.frame(pca$x)
+ggplot(x) +
+  aes(PC1, PC2, col="diagnosis") +
+  geom_point()
+  
+```
+
+```{r}
+pca<-prcomp(wisc, scale=TRUE)
+```
+
+> Q. How much variance is captured in the top 3 PCs.
+
+They capture 76% of the total variance. 
+
+> Q9. For the first principal component, what is the component of the loading vector (i.e. wisc.pr$rotation[,1]) for the feature concave.points_mean? This tells us how much this original feature contributes to the first PC.
+
+```{r}
+pca$rotation["concave.points_mean",1]
+```
+
+```{r}
+attributes(pca)
+```
+
+# Combine PCA results with clustering.
+
+We can use our new PCA variable (i.e the scores along the PCs contained in t `pca$x`) as in put for other methods such as clustering.
+
+```{r}
+# Hclust needs a distance matrix as input
+d<-dist(pca$x[,1:3])
+
+hc<-hclust(d,method="ward.D2")
+plot(hc)
+```
+
+To get our cluster membership vector we can use the `cutree()` function and specify a height (`h`) or number of groups (`k`).
+
+```{r}
+grps<-cutree(hc,h=80)
+table(grps)
+```
+
+I want to find out how many diagnosis "M" and "B" are in each grp
+
+```{r}
+table(diagnosis)
+```
+
+```{r}
+table(diagnosis, grps)
+```
+
+We can also plot our results using our clustering vector `grps`.
+
+```{r}
+plot(pca$x[,1],pca$x[,2],col=grps)
+```
+
+```{r}
+ggplot(x)+
+  aes(PC1, PC2)+
+  geom_point(col=grps)
+```
+
+> Q15. What is the specificity and sensitivity of our current results?
+
+```{r}
+table(diagnosis, grps)
+# TP refers to benign cases, and TN refers to malignant.
+# FN refers to malignant but predicted to be benign. FP refers to benign but predicted to be malignant.
+TP <- 33
+FN <- 179
+TN <- 24
+FP <- 333
+sensitivity <- TP/(TP+FN)
+specificity <- TN/(TN+FN)
+sensitivity
+specificity
+```
+
+# Prediction
+
+We will use the `predict()` function that will take our PCA model from before and new cancer cell data and project that data onto our PCA space.
+```{r}
+#url <- "new_samples.csv"
+url <- "https://tinyurl.com/new-samples-CSV"
+new <- read.csv(url)
+npc <- predict(pca, newdata=new)
+npc
+```
+
+Plot the data that shows patient 1 and patient 2, within the original data for wisc.csv
+```{r}
+plot(pca$x[,1:2], col=grps)
+points(npc[,1], npc[,2], col="blue", pch=16, cex=3)
+text(npc[,1], npc[,2], c(1,2), col="white")
+```
+
