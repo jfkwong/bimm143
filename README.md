@@ -1,6 +1,8 @@
-# bimm143
+# BIMM 143
 
 My Bioinformatics class work from Spring 2023 at UC San Diego
+
+By: Juliane Kwong
 
 From class [BIMM143](https://bioboot.github.io/bimm143_S23/)
 
