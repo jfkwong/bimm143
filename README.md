@@ -1,4 +1,4 @@
-# Juliane
+# bimm143
 
 My Bioinformatics class work from Spring 2023 at UC San Diego
 
